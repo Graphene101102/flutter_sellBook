@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../local/shared_prefs.dart';
-import '../models/invoice.dart';
+import 'DetailsPage.dart';
 import 'HomePage.dart';
+import 'login_page.dart';
 
 class SearchPage extends StatefulWidget {
   @override
@@ -14,25 +14,20 @@ class _SearchPageState extends State<SearchPage> {
   List<Invoice> _invoices = [];
   List<Invoice> _searchResults = [];
   TextEditingController _searchController = TextEditingController();
-  final SharePrefs _prefs = SharePrefs();
-
-int _selectedIndex = 0;
+  int _selectedIndex = 0;
 
   void navi(int index) {
     if (index == 0) {
-      Navigator.of(context).pushReplacement(MaterialPageRoute(
-          builder: (context) => HomePage(
-              )));
+      Navigator.of(context)
+          .pushReplacement(MaterialPageRoute(builder: (context) => HomePage()));
     }
     if (index == 1) {
-      Navigator.of(context).pushReplacement(MaterialPageRoute(
-          builder: (context) => SearchPage()));
+      Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => SearchPage()));
     }
     if (index == 2) {
-      // Navigator.of(context).pushReplacement(MaterialPageRoute(
-      //     builder: (context) => trashPage(
-      //           title: 'Trash',
-      //         )));
+      Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => DetailsPage()));
     }
   }
 
@@ -42,20 +37,23 @@ int _selectedIndex = 0;
       navi(index);
     });
   }
+
   @override
   void initState() {
     super.initState();
     _loadInvoices();
   }
 
-_loadInvoices()  {
-     _prefs.loadInvoices().then((value) {
+  Future<void> _loadInvoices() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? invoiceStrings = prefs.getStringList('invoices');
+    if (invoiceStrings != null) {
+      List<Invoice> invoices =
+          invoiceStrings.map((string) => Invoice.fromJson(string)).toList();
       setState(() {
-        if (value != null) {
-          _invoices = value.toList();
-        }
+        _invoices = invoices;
       });
-    });
+    }
   }
 
   void _searchInvoices(String query) {
@@ -70,107 +68,130 @@ _loadInvoices()  {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          title: Text('Tìm kiếm hoá đơn'),
-          centerTitle: true,
-        ),
-        body: Container(
-          decoration: BoxDecoration(
-              image: DecorationImage(
-                  image: AssetImage("assets/images/bg3.gif"),
-                  fit: BoxFit.fitWidth)),
-          padding: EdgeInsets.only(top: 16.0),
-          child: Column(
-            children: [
-              Padding(
-                padding: EdgeInsets.all(16.0),
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    labelText: 'Tên khách hàng',
-                    suffixIcon: IconButton(
-                      icon: Icon(Icons.search),
-                      onPressed: () {
-                        _searchInvoices(_searchController.text);
-                      },
-                    ),
+      body: Container(
+        decoration: BoxDecoration(
+            image: DecorationImage(
+                image: AssetImage("assets/images/images.jpeg"),
+                fit: BoxFit.cover)),
+        padding: EdgeInsets.only(top: 16.0),
+        child: Column(
+          children: [
+            SizedBox(
+              height: 20,
+            ),
+            Row(
+                    children: [
+                      SizedBox(width: 10,),
+                      Text('  '),
+                      Spacer(),
+                       Text(
+              'Tìm kiếm hoá đơn',
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                decoration: TextDecoration.underline,
+                fontSize: 31.0,
+                color: Colors.yellow,
+              ),
+            ),
+                      Spacer(),
+                      IconButton(onPressed: ()=>{
+                        Navigator.pushAndRemoveUntil(context, 
+                      MaterialPageRoute(builder: (BuildContext context) => const LoginPage()), 
+                      ModalRoute.withName('/')
+                      )}, 
+                      icon: Icon(Icons.logout)),
+                      SizedBox(width: 10,),
+                    ],
+                  ),
+           
+            Padding(
+              padding: EdgeInsets.all(16.0),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  labelText: 'Tên khách hàng',
+                  suffixIcon: IconButton(
+                    icon: Icon(Icons.search),
+                    onPressed: () {
+                      _searchInvoices(_searchController.text);
+                    },
                   ),
                 ),
               ),
-              SizedBox(height: 26.0),
-              Divider(
-                color: Colors.black,
-              ),
-              Text('Danh sách tìm kiếm hoá đơn',
-                  style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 26.0,
-                      fontWeight: FontWeight.bold,
-                      decoration: TextDecoration.underline)),
-              SizedBox(height: 26.0),
-              Expanded(
-                  child: ListView.builder(
-                itemCount: _searchResults.length,
-                itemBuilder: (context, index) {
-                  Invoice invoice = _searchResults[index];
-                  return ListTile(
-                    title: RichText(
-                      text: TextSpan(
-                        text: invoice.customerName,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16.0,
-                          color: Colors.black,
-                        ),
-                        children: <TextSpan>[
-                          if (invoice.isVip)
-                            TextSpan(
-                              text: '  (VIP) ',
-                              style: TextStyle(color: Colors.red),
-                            ),
-                        ],
+            ),
+            SizedBox(height: 26.0),
+            Divider(
+              color: Colors.black,
+            ),
+            Text('Danh sách tìm kiếm hoá đơn',
+                style: TextStyle(
+                    color: Colors.red,
+                    fontSize: 26.0,
+                    fontWeight: FontWeight.bold,
+                    decoration: TextDecoration.underline)),
+            SizedBox(height: 26.0),
+            Expanded(
+                child: ListView.builder(
+              itemCount: _searchResults.length,
+              itemBuilder: (context, index) {
+                Invoice invoice = _searchResults[index];
+                return ListTile(
+                  title: RichText(
+                    text: TextSpan(
+                      text: invoice.customerName,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16.0,
+                        color: Colors.green,
                       ),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Số lượng sách: ${invoice.quantity}',
-                          style: TextStyle(
-                            fontSize: 13.0,
-                            color: Color.fromARGB(255, 148, 139, 13),
+                      children: <TextSpan>[
+                        if (invoice.isVip)
+                          TextSpan(
+                            text: '  (VIP) ',
+                            style: TextStyle(color: Colors.red),
                           ),
-                        ),
-                        Text(
-                          'Đơn giá: ${invoice.price}',
-                          style: TextStyle(
-                            fontSize: 13.0,
-                            color: Colors.red,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          'Thành tiền: ${invoice.totalAmount}',
-                          style: TextStyle(
-                            fontSize: 13.0,
-                            color: Color.fromARGB(255, 26, 16, 1),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
                       ],
                     ),
-                    trailing: Icon(
-                      invoice.isPaid ? Icons.check : Icons.close,
-                      color: invoice.isPaid ? Colors.green : Colors.red,
-                    ),
-                  );
-                },
-              )),
-            ],
-          ),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Số lượng sách: ${invoice.quantity}',
+                        style: TextStyle(
+                          fontSize: 13.0,
+                          color: Colors.black,
+                        ),
+                      ),
+                      Text(
+                        'Đơn giá: ${invoice.price}',
+                        style: TextStyle(
+                          fontSize: 13.0,
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'Thành tiền: ${invoice.totalAmount}',
+                         style: TextStyle(
+                                
+                                    fontSize: 16.0,
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.w400)
+                      ),
+                    ],
+                  ),
+                  trailing: Icon(
+                    invoice.isPaid ? Icons.check : Icons.close,
+                    color: invoice.isPaid ? Colors.green : Colors.red,
+                  ),
+                );
+              },
+            )),
+          ],
         ),
-        bottomNavigationBar:
+      ),
+      bottomNavigationBar:
           BottomNavigationBar(items: const <BottomNavigationBarItem>[
         BottomNavigationBarItem(
           icon: Icon(Icons.home, color: Colors.blue),
@@ -182,15 +203,15 @@ _loadInvoices()  {
             Icons.search,
             color: Colors.blue,
           ),
-          label: 'Tìm kiếm',
+          label: 'Search',
           backgroundColor: Colors.green,
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.bar_chart, color: Colors.blue),
-          label: 'Thống kê',
+          label: 'Chart',
           backgroundColor: Colors.pink,
         ),
       ], currentIndex: _selectedIndex, onTap: _onItemTapped),
-        );
+    );
   }
 }

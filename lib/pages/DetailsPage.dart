@@ -1,337 +1,212 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutter/services.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-// import '../local/shared_prefs.dart';
-// import 'HomePage.dart';
+import 'HomePage.dart';
+import 'SearchPage.dart';
+import 'login_page.dart';
 
-// class DetailsPage extends StatefulWidget {
+class DetailsPage extends StatefulWidget {
+  @override
+  _DetailsPageState createState() => _DetailsPageState();
+}
 
+class _DetailsPageState extends State<DetailsPage> {
+  List<Invoice> _invoices = [];
+int _selectedIndex = 0;
 
-//   const DetailsPage({
-//     super.key,
+    void navi(int index) {
+    if (index == 0) {
+      Navigator.of(context).pushReplacement(MaterialPageRoute(
+          builder: (context) => HomePage()));
+    }
+    if (index == 1) {
+      Navigator.of(context).pushReplacement(MaterialPageRoute(
+          builder: (context) => SearchPage()));
+    }
+    if (index == 2) {
+      Navigator.of(context).pushReplacement(MaterialPageRoute(
+          builder: (context) => DetailsPage()));
+    }
+  }
 
-//   });
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+      navi(index);
+    });
+  }
+  @override
+  void initState() {
+    super.initState();
+    _loadInvoices();
+  }
 
-//   @override
-//   State<DetailsPage> createState() => _DetailsPage();
-// }
+  Future<void> _loadInvoices() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? invoiceStrings = prefs.getStringList('invoices');
+    if (invoiceStrings != null) {
+      List<Invoice> invoices =
+          invoiceStrings.map((string) => Invoice.fromJson(string)).toList();
+      setState(() {
+        _invoices = invoices;
+      });
+    }
+  }
 
-// class _DetailsPage extends State<DetailsPage> {
-//   final _searchController = TextEditingController();
-//   final _addController = TextEditingController();
-//   final _addFocus = FocusNode();
-//   bool _showAddBox = false;
-
-//   int _selectedIndex = 0;
-
-//   void navi(int index) {
-//     if (index == 0) {
-//       Navigator.of(context).pushReplacement(MaterialPageRoute(
-//           builder: (context) => HomePage(
-//               )));
-//     }
-//     if (index == 1) {
-//       Navigator.of(context).pushReplacement(MaterialPageRoute(
-//           builder: (context) => DetailsPage()));
-//     }
-//     // if (index == 2) {
-//     //   Navigator.of(context).pushReplacement(MaterialPageRoute(
-//     //       builder: (context) => trashPage(
-//     //             title: 'Trash',
-//     //           )));
-//     // }
-//   }
-
-//   void _onItemTapped(int index) {
-//     setState(() {
-//       _selectedIndex = index;
-//       navi(index);
-//     });
-//   }
-
-//   final SharePrefs _prefs = SharePrefs();
-//   List<TodoModel> _todos = [];
-//   List<TodoModel> _searches = [];
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     _getTodos();
-//   }
-
-//   _searchTodos(String searchText) {
-//     searchText = searchText.toLowerCase();
-//     _searches = _todos
-//         .where((element) =>
-//             (element.text ?? '').toLowerCase().contains(searchText) &&
-//             element.status == 1)
-//         .toList();
-//   }
-
-//   _getTodos() {
-//     _prefs.getTodos().then((value) {
-//       setState(() {
-//         if (value != null) {
-//           _todos = value.toList();
-//           _searches =
-//               [..._todos].where((element) => element.status == 1).toList();
-//         }
-//       });
-//     });
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: AppColor.bgColor,
-//       appBar: TdAppBar(
-//           rightPressed: () async {
-//             bool? status = await showDialog<bool>(
-//               context: context,
-//               builder: (BuildContext context) => AlertDialog(
-//                 title: const Text('😍'),
-//                 content: const Row(
-//                   children: [
-//                     Expanded(
-//                       child: Text(
-//                         'Do you want to logout?',
-//                         style: TextStyle(fontSize: 22.0),
-//                         textAlign: TextAlign.center,
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//                 actions: [
-//                   TextButton(
-//                     onPressed: () => Navigator.pop(context, false),
-//                     child: const Text('Cancel'),
-//                   ),
-//                   TextButton(
-//                     onPressed: () => {
-//                       // Navigator.push(context,
-//                       //     MaterialPageRoute(builder: (context) => LoginPage()))
-
-//                       Navigator.pushAndRemoveUntil(context, 
-//                       MaterialPageRoute(builder: (BuildContext context) => const LoginPage()), 
-//                       ModalRoute.withName('/')
-//                       )
-//                     },
-//                     child: const Text('OK'),
-//                   ),
-//                 ],
-//               ),
-//             );
-//             if (status ?? false) {
-//               SystemChannels.platform.invokeMethod('SystemNavigator.pop');
-//             }
-//           },
-//           title: widget.title),
-//       body: Stack(
-//         children: [
-//           Positioned.fill(
-//             child: SingleChildScrollView(
-//               child: Padding(
-//                 padding: const EdgeInsets.symmetric(horizontal: 20.0)
-//                     .copyWith(top: 12.0, bottom: 92.0),
-//                 child: Column(
-//                   children: [
-//                     SearchBox(
-//                         onChanged: (value) =>
-//                             setState(() => _searchTodos(value)),
-//                         controller: _searchController),
-//                     const Divider(
-//                         height: 32.6, thickness: 1.36, color: AppColor.grey),
-//                     ListView.separated(
-//                       physics: const NeverScrollableScrollPhysics(),
-//                       shrinkWrap: true,
-//                       padding: EdgeInsets.zero,
-//                       itemCount: _searches.length,
-//                       itemBuilder: (context, index) {
-//                         TodoModel todo = _searches.reversed.toList()[index];
-//                         return Dismissible(
-//                           key: Key('${todo.hashCode}'),
-//                           direction: DismissDirection.startToEnd,
-//                           onDismissed: (direction) => {
-//                             showDialog(
-//                               context: context, 
-//                               builder: (BuildContext context) => AlertDialog(
-//                                   title: const Text('😍'),
-//                                   content: const Row(
-//                                     children: [
-//                                       Expanded(
-//                                         child: Text(
-//                                           'Do you want to remove the todo?',
-//                                           style: TextStyle(fontSize: 22.0),
-//                                           textAlign: TextAlign.center,
-//                                         ),
-//                                       ),
-//                                     ],
-//                                   ),
-//                                   actions: [
-//                                     TextButton(
-//                                       onPressed: () =>
-//                                           Navigator.pop(context, false),
-//                                       child: const Text('Cancel'),
-//                                     ),
-//                                     TextButton(
-//                                       onPressed: () {
-//                                         setState(
-//                                           () {
-//                                              todo.status = 3;
-//                                   _searches.remove(todo);
-//                                   _prefs.addTodos(_todos);
-
-//                                   _getTodos();
-//                                             Navigator.pop(context, true);
-//                                           },
-//                                         );
-//                                       },
-//                                       child: const Text('OK'),
-//                                     ),
-//                                   ],
+  @override
+  Widget build(BuildContext context) {
+    int paidInvoicesCount = _invoices.where((invoice) => invoice.isPaid).length;
+    double totalRevenue = _invoices
+        .where((invoice) => invoice.isPaid)
+        .fold(0, (sum, invoice) => sum + invoice.totalAmount);
+    return Scaffold(
+      
+      body: Container(
+         decoration: const BoxDecoration(
+              image: DecorationImage(
+                  image: AssetImage("assets/images/images.jpeg"),
+                  fit: BoxFit.cover)),
+          height: MediaQuery.of(context).size.height,
+        child: Column(
+          children: [
+               const SizedBox(
+                height: 20,
+              ),
+              Row(
+                      children: [
+                        SizedBox(width: 10,),
+                        Text('  '),
+                        Spacer(),
+                         Text(
+                'Danh sách hoá đơn',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  decoration: TextDecoration.underline,
+                  fontSize: 31.0,
+                  color: Colors.yellow,
+                ),
+              ),
+                        Spacer(),
+                        IconButton(onPressed: ()=>{
+                          Navigator.pushAndRemoveUntil(context, 
+                        MaterialPageRoute(builder: (BuildContext context) => const LoginPage()), 
+                        ModalRoute.withName('/')
+                        )}, 
+                        icon: Icon(Icons.logout)),
+                        SizedBox(width: 10,),
+                      ],
+                    ),
+            ListView.builder(
+              itemCount: _invoices.length,
+              itemBuilder: (context, index) {
+                Invoice invoice = _invoices[index];
+                return ListTile(
+                  title: RichText(
+                    text: TextSpan(
+                      text: invoice.customerName,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16.0,
+                        color: Colors.black,
+                      ),
+                      children: <TextSpan>[
+                        if (invoice.isVip)
+                          TextSpan(
+                            text: '  (VIP) ',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                      ],
+                    ),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Số lượng sách: ${invoice.quantity}',
+                        style: TextStyle(
+                          fontSize: 13.0,
+                        color: Colors.black,
+                        ),
+                      ),
+                      Text(
+                        'Đơn giá: ${invoice.price}',
+                        style: TextStyle(
+                          fontSize: 13.0,
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'Thành tiền: ${invoice.totalAmount}',
+                         style: TextStyle(
                                 
-//                               ), 
-                              
-
-//                             )
-                           
-//                           },
-//                           child: TodoItem(
-//                             onTap: () {
-//                               setState(() {
-//                                 todo.status = 2;
-//                                 _prefs.addTodos(_todos);
-
-//                                 _getTodos();
-//                               });
-//                             },
-                           
-//                             text: todo.text ?? '-:-',
-//                             status: todo.status ?? 0,
-//                           ),
-//                         );
-//                       },
-//                       separatorBuilder: (context, index) =>
-//                           const SizedBox(height: 16.8),
-//                     )
-//                   ],
-//                 ),
-//               ),
-//             ),
-//           ),
-//           Positioned(
-//             left: 20.0,
-//             right: 20.0,
-//             bottom: 14.6,
-//             child: Row(
-//               children: [
-//                 Expanded(
-//                   child: Visibility(
-//                     visible: _showAddBox,
-//                     child: Container(
-//                       padding: const EdgeInsets.symmetric(
-//                           horizontal: 16.0, vertical: 5.6),
-//                       decoration: BoxDecoration(
-//                         color: AppColor.white,
-//                         border: Border.all(color: AppColor.blue),
-//                         borderRadius: BorderRadius.circular(10.0),
-//                         boxShadow: const [
-//                           BoxShadow(
-//                             color: AppColor.shadow,
-//                             offset: Offset(0.0, 3.0),
-//                             blurRadius: 10.0,
-//                           ),
-//                         ],
-//                       ),
-//                       child: TextField(
-//                         controller: _addController,
-//                         focusNode: _addFocus,
-//                         decoration: const InputDecoration(
-//                           border: InputBorder.none,
-//                           hintText: 'Add a new todo item',
-//                           hintStyle: TextStyle(color: AppColor.grey),
-//                         ),
-//                       ),
-//                     ),
-//                   ),
-//                 ),
-//                 const SizedBox(width: 18.0),
-//                 GestureDetector(
-//                   onTap: () {
-//                     _showAddBox = !_showAddBox;
-
-//                     if (_showAddBox) {
-//                       setState(() {});
-//                       _addFocus.requestFocus();
-//                       return;
-//                     }
-
-//                     String text = _addController.text.trim();
-//                     if (text.isEmpty) {
-//                       setState(() {});
-//                       FocusScope.of(context).unfocus();
-//                       return;
-//                     }
-
-//                     int id = 1;
-//                     if (_todos.isNotEmpty) {
-//                       id = (_todos.last.id ?? 0) + 1;
-//                     }
-//                     TodoModel todo = TodoModel()
-//                       ..id = id
-//                       ..text = text
-//                       ..status = 1;
-//                     _todos.add(todo);
-//                     _prefs.addTodos(_todos);
-//                     _addController.clear();
-//                     _searchController.clear();
-//                     _searchTodos('');
-//                     setState(() {});
-//                     FocusScope.of(context).unfocus();
-//                   },
-//                   child: Container(
-//                     padding: const EdgeInsets.all(14.6),
-//                     decoration: BoxDecoration(
-//                       color: AppColor.blue,
-//                       borderRadius: BorderRadius.circular(10.0),
-//                       boxShadow: const [
-//                         BoxShadow(
-//                           color: AppColor.shadow,
-//                           offset: Offset(0.0, 3.0),
-//                           blurRadius: 6.0,
-//                         ),
-//                       ],
-//                     ),
-//                     child: const Icon(Icons.add,
-//                         size: 32.0, color: AppColor.white),
-//                   ),
-//                 ),
-//               ],
-//             ),
-//           ),
-//         ],
-//       ),
-//       bottomNavigationBar:
-//           BottomNavigationBar(items: const <BottomNavigationBarItem>[
-//         BottomNavigationBarItem(
-//           icon: Icon(Icons.home, color: Colors.blue),
-//           label: 'Home',
-//           backgroundColor: Colors.blue,
-//         ),
-//         BottomNavigationBarItem(
-//           icon: Icon(
-//             Icons.check,
-//             color: Colors.blue,
-//           ),
-//           label: 'Complete',
-//           backgroundColor: Colors.green,
-//         ),
-//         BottomNavigationBarItem(
-//           icon: Icon(Icons.delete, color: Colors.blue),
-//           label: 'Trash',
-//           backgroundColor: Colors.pink,
-//         ),
-//       ], currentIndex: _selectedIndex, onTap: _onItemTapped),
-//     );
-//   }
-// }
+                                    fontSize: 16.0,
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.w400)
+                      ),
+                    ],
+                  ),
+                  trailing: Icon(
+                    invoice.isPaid ? Icons.check : Icons.close,
+                    color: invoice.isPaid ? Colors.green : Colors.red,
+                  ),
+                );
+              },
+            ),
+            Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Tổng số hoá đơn đã thanh toán: $paidInvoicesCount',
+                          style: TextStyle(
+                            fontSize: 16.0,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 8.0),
+                        Text(
+                          'Tổng doanh thu: $totalRevenue',
+                          style: TextStyle(
+                            fontSize: 22.0,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+      
+          ],
+        ),
+      ),
+      bottomNavigationBar:
+          BottomNavigationBar(items: const <BottomNavigationBarItem>[
+        BottomNavigationBarItem(
+          icon: Icon(Icons.home, color: Colors.blue),
+          label: 'Home',
+          backgroundColor: Colors.blue,
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(
+            Icons.search,
+            color: Colors.blue,
+          ),
+          label: 'Search',
+          backgroundColor: Colors.green,
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.bar_chart, color: Colors.blue),
+          label: 'Chart',
+          backgroundColor: Colors.pink,
+        ),
+      ], currentIndex: _selectedIndex, onTap: _onItemTapped),
+    );
+  }
+}

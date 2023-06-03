@@ -1,11 +1,15 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:sell_book/pages/DetailsPage.dart';
-import 'package:sell_book/pages/SearchPage.dart';
+
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../components/custom_button.dart';
 import '../components/custom_text_field.dart';
-import '../local/shared_prefs.dart';
-import '../models/invoice.dart';
+import 'SearchPage.dart';
+import 'login_page.dart';
+
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -20,26 +24,20 @@ class _HomePageState extends State<HomePage> {
   bool _isVIP = false;
   double _totalAmount = 0.0;
   List<Invoice> _invoices = [];
-  List<Invoice> _searches = [];
-
-  final SharePrefs _prefs = SharePrefs();
-
-  int _selectedIndex = 0;
+int _selectedIndex = 0;
 
   void navi(int index) {
     if (index == 0) {
-      Navigator.of(context)
-          .pushReplacement(MaterialPageRoute(builder: (context) => HomePage()));
+      Navigator.of(context).pushReplacement(MaterialPageRoute(
+          builder: (context) => HomePage()));
     }
     if (index == 1) {
-      Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => SearchPage()));
+      Navigator.of(context).pushReplacement(MaterialPageRoute(
+          builder: (context) => SearchPage()));
     }
     if (index == 2) {
-      // Navigator.of(context).pushReplacement(MaterialPageRoute(
-      //     builder: (context) => trashPage(
-      //           title: 'Trash',
-      //         )));
+      Navigator.of(context).pushReplacement(MaterialPageRoute(
+          builder: (context) => DetailsPage()));
     }
   }
 
@@ -49,7 +47,6 @@ class _HomePageState extends State<HomePage> {
       navi(index);
     });
   }
-
   @override
   void initState() {
     super.initState();
@@ -107,7 +104,9 @@ class _HomePageState extends State<HomePage> {
       isVip: _isVIP,
     );
 
-    _invoices.add(newInvoice);
+    setState(() {
+      _invoices.add(newInvoice);
+    });
 
     // Reset form fields
     _customerNameController.clear();
@@ -117,21 +116,36 @@ class _HomePageState extends State<HomePage> {
     _totalAmount = 0.0;
 
     //Luư thông tin hoá đơn vào Shared Preferences
-    _prefs.saveInvoices(_invoices);
-    setState(() {});
+
+    await _saveInvoices();
   }
 
-  _loadInvoices() {
-    _prefs.loadInvoices().then((value) {
-      setState(() {
-        if (value != null) {
-          _invoices = value.toList();
-          _searches = [..._invoices]
-              .where((element) => element.isPaid == false)
-              .toList();
-        }
-      });
+  void _deleteInvoice(int index) async {
+    setState(() {
+      _invoices.removeAt(index);
     });
+
+    // Lưu thông tin hoá đơn đã xoá vào Shared Preferences
+    await _saveInvoices();
+  }
+
+  Future<void> _saveInvoices() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> invoiceStrings =
+        _invoices.map((invoice) => invoice.toJson()).toList();
+    await prefs.setStringList('invoices', invoiceStrings);
+  }
+
+  Future<void> _loadInvoices() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? invoiceStrings = prefs.getStringList('invoices');
+    if (invoiceStrings != null) {
+      List<Invoice> invoices =
+          invoiceStrings.map((string) => Invoice.fromJson(string)).toList();
+      setState(() {
+        _invoices = invoices;
+      });
+    }
   }
 
   Future<void> _showConfirmationDialog(
@@ -153,6 +167,7 @@ class _HomePageState extends State<HomePage> {
               child: Text('Yes'),
               onPressed: () {
                 onConfirm();
+                Navigator.of(context).pop();
               },
             ),
           ],
@@ -178,7 +193,16 @@ class _HomePageState extends State<HomePage> {
     _Dialog('Trạng thái hoá đơn', 'Hoá đơn chưa thanh toán!', () {
       setState(() {
         _invoices[index].isPaid = false;
-        _prefs.saveInvoices(_invoices);
+        _saveInvoices();
+      });
+    });
+  }
+
+  void _markAsPaid(int index) {
+    _showConfirmationDialog('Xác nhận', 'Đánh dấu hoá đơn đã thanh toán?', () {
+      setState(() {
+        _invoices[index].isPaid = true;
+        _saveInvoices();
       });
     });
   }
@@ -193,229 +217,232 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-            image: DecorationImage(
-                image: AssetImage("assets/images/bghp.png"),
-                fit: BoxFit.fitWidth)),
-        height: MediaQuery.of(context).size.height,
-        //padding: EdgeInsets.all(8.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Positioned.fill(
-              child: Column(children: [
-                Center(
-                    child: Text(
-                  'Thông tin hoá đơn.',
-                  style: TextStyle(
-                    decoration: TextDecoration.underline,
-                    fontSize: 26.0,
-                    color: Color.fromARGB(255, 243, 8, 8),
-                  ),
-                ))
-              ]),
-            ),
-            SizedBox(height: 16.0),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 30.0),
-              child: CustomTextField(
-                obscureText: false,
-                controller: _customerNameController,
-                hintText: "Tên khách hàng",
-              ),
-            ),
-            SizedBox(height: 16.0),
-            Row(
-              children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 30.0, right: 10.0),
-                    child: CustomTextField(
-                      obscureText: false,
-                      controller: _quantityController,
-                      hintText: "Số lượng sách",
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 30.0, left: 10.0),
-                    child: CustomTextField(
-                      obscureText: false,
-                      controller: _priceController,
-                      hintText: "Price / 1 đơn vị",
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 16.0),
-            Row(
-              children: [
-                Padding(
-                  padding: EdgeInsets.only(left: 32),
-                  child: Checkbox(
-                    value: _isVIP,
-                    onChanged: (value) {
-                      setState(() {
-                        _isVIP = value ?? false;
-                        _calculateTotalAmount(); // Recalculate total amount when VIP status changes
-                      });
-                    },
-                  ),
-                ),
-                Text(
-                  'Khách hàng VIP',
-                  style: TextStyle(fontSize: 14),
-                ),
-                SizedBox(
-                  width: 30,
-                ),
-                ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      primary: Colors.red,
-                    ),
-                    onPressed: () {
-                      _calculateTotalAmount();
-                    },
-                    child: Text('Thành tiền')),
-                SizedBox(width: 16.0),
-                Container(
-                  padding:
-                      EdgeInsets.all(8), // Khoảng cách giữa khung và nội dung
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Color.fromARGB(
-                          255, 212, 20, 20), // Màu viền của khung
-                      width: 1, // Độ dày của viền
-                    ),
-                    borderRadius: BorderRadius.circular(8), // Bo góc của khung
-                  ),
-                  child: Text(
-                    '$_totalAmount',
-                    style: TextStyle(
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 8.0),
-            Center(
-                child: CustomButton(
-              onPressed: () {
-                _saveInformation(); // Lưu thông tin
-              },
-              text: 'Lưu thông tin',
-            )),
-            SizedBox(height: 8.0),
-            Divider(
-              color: Colors.red,
-            ),
-            const Center(
-                child: Text(
-              'Xác nhận hoá đơn:',
-              style: TextStyle(
-                  fontSize: 30,
-                  color: Colors.red,
-                  decoration: TextDecoration.underline),
-            )),
-            Expanded(
-              child: ListView.builder(
-                physics: AlwaysScrollableScrollPhysics(),
-                itemCount: _invoices.length,
-                itemBuilder: (context, index) {
-                  Invoice invoice = _invoices[index];
-                  return ListTile(
-                    title: ListTile(
-                      title: RichText(
-                        text: TextSpan(
-                            text: invoice.customerName,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16.0,
-                              color: Colors.black,
-                            ),
-                            children: <TextSpan>[
-                              if (invoice.isVip)
-                                TextSpan(
-                                    text: '  (VIP) ',
-                                    style: TextStyle(color: Colors.red))
-                            ]),
+      return Scaffold(
+        body: Container(
+          decoration: const BoxDecoration(
+              image: DecorationImage(
+                  image: AssetImage("assets/images/images.jpeg"),
+                  fit: BoxFit.cover)),
+          height: MediaQuery.of(context).size.height,
+          //padding: EdgeInsets.all(8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+               Positioned.fill(
+                child: Column(children: [
+                  SizedBox(height: 20,),
+
+                  Row(
+                    children: [
+                      SizedBox(width: 10,),
+                      Text('  '),
+                      Spacer(),
+                      Text(
+                        'Thông tin hoá đơn.',
+                        style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      decoration: TextDecoration.underline,
+                      fontSize: 31.0,
+                      color: Colors.yellow,
+                        ),
                       ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Số lượng sách: ${invoice.quantity}',
-                            style: TextStyle(
-                                fontSize: 13.0,
-                                color: Color.fromARGB(255, 148, 139, 13)),
-                          ),
-                          Text(
-                            'Đơn giá: ${invoice.price}',
-                            style: TextStyle(
-                              fontSize: 13.0,
-                              color: Colors.red,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text('Thành tiền: ${invoice.totalAmount}',
+                      Spacer(),
+                      IconButton(onPressed: ()=>{
+                        Navigator.pushAndRemoveUntil(context, 
+                      MaterialPageRoute(builder: (BuildContext context) => const LoginPage()), 
+                      ModalRoute.withName('/')
+                      )}, 
+                      icon: Icon(Icons.logout)),
+                      SizedBox(width: 10,),
+                    ],
+                  )
+                ]),
+              ),
+              SizedBox(height: 16.0),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 30.0),
+                child: CustomTextField(
+                  obscureText: false,
+                  controller: _customerNameController,
+                  hintText: "Tên khách hàng",
+                ),
+              ),
+              SizedBox(height: 16.0),
+              Row(
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 30.0, right: 10.0),
+                      child: CustomTextField(
+                        obscureText: false,
+                        controller: _quantityController,
+                        hintText: "Số lượng sách",
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 30.0, left: 10.0),
+                      child: CustomTextField(
+                        obscureText: false,
+                        controller: _priceController,
+                        hintText: "Price / 1 đơn vị",
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 16.0),
+              Row(
+                children: [
+                  Padding(
+                    padding: EdgeInsets.only(left: 32),
+                    child: Checkbox(
+                      value: _isVIP,
+                      onChanged: (value) {
+                        setState(() {
+                          _isVIP = value ?? false;
+                          _calculateTotalAmount(); // Recalculate total amount when VIP status changes
+                        });
+                      },
+                    ),
+                  ),
+                  Text(
+                    'Khách hàng VIP',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  SizedBox(
+                    width: 30,
+                  ),
+                  ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        primary: Colors.red,
+                      ),
+                      onPressed: () {
+                        _calculateTotalAmount();
+                      },
+                      child: Text('Thành tiền', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),)),
+                  SizedBox(width: 16.0),
+                  Container(
+                    padding:
+                        EdgeInsets.all(8), // Khoảng cách giữa khung và nội dung
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Colors.yellow, // Màu viền của khung
+                        width: 1, // Độ dày của viền
+                      ),
+                      borderRadius: BorderRadius.circular(8), // Bo góc của khung
+                    ),
+                    child: Text(
+                      '$_totalAmount',
+                      style: TextStyle(
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8.0),
+              Center(
+                  child: CustomButton(
+                onPressed: () {
+                  _saveInformation(); // Lưu thông tin
+                },
+                text: 'Lưu thông tin',
+              )),
+              SizedBox(height: 8.0),
+              Divider(
+                color: Colors.red,
+              ),
+              const Center(
+                  child: Text(
+                'Xác nhận hoá đơn:',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                    fontSize: 30,
+                    color: Colors.red,
+                    decoration: TextDecoration.underline),
+              )),
+              Expanded(
+                child: ListView.builder(
+                  physics: AlwaysScrollableScrollPhysics(),
+                  itemCount: _invoices.length,
+                  itemBuilder: (context, index) {
+                    Invoice invoice = _invoices[index];
+                    return ListTile(
+                      title: ListTile(
+                        title: RichText(
+                          text: TextSpan(
+                              text: invoice.customerName,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16.0,
+                                color: Colors.green,
+                              ),
+                              children: <TextSpan>[
+                                if (invoice.isVip)
+                                  TextSpan(
+                                      text: '  (VIP) ',
+                                      style: TextStyle(color: Colors.yellowAccent))
+                              ]),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Số lượng sách: ${invoice.quantity}',
                               style: TextStyle(
                                   fontSize: 13.0,
-                                  color: Color.fromARGB(255, 26, 16, 1),
-                                  fontWeight: FontWeight.bold)),
+                                  color: Colors.black),
+                            ),
+                            Text(
+                              'Đơn giá: ${invoice.price}',
+                              style: TextStyle(
+                                fontSize: 13.0,
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text('Thành tiền: ${invoice.totalAmount}',
+                                style: TextStyle(
+                                
+                                    fontSize: 16.0,
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.w400)),
+                          ],
+                        ),
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (!invoice.isPaid) ...[
+                            Checkbox(
+                              value: invoice.isPaid,
+                              onChanged: (value) {
+                                _markAsPaid(index);
+                              },
+                            ),
+                           
+                            IconButton(
+                              icon: Icon(Icons.delete),
+                              onPressed: () {
+                                _showConfirmationDialog(
+                                    'Xác nhận', 'Xóa hoá đơn?', () {
+                                  _deleteInvoice(index);
+                                });
+                              },
+                            ),
+                          ],
                         ],
                       ),
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (!invoice.isPaid) ...[
-                          // Checkbox(
-                          //   value: invoice.isPaid,
-                          //   onChanged: (value) {
-                          //         invoice.isPaid = true;
-                          //         _prefs.saveInvoices(_invoices);
-
-                          //     setState(() {});
-                          //   },
-                          // ),
-                          Checkbox(
-                            value: invoice.isPaid,
-                            onChanged: (value) {
-                              setState(() {
-                               invoice.isPaid = value ?? false;
-                              _prefs.saveInvoices(_invoices);
-                              });
-                            },
-                          ),
-
-                          IconButton(
-                            icon: Icon(Icons.delete),
-                            onPressed: () {
-                              _showConfirmationDialog(
-                                  'Xác nhận', 'Xóa hoá đơn?', () {
-                                _invoices.remove(invoice);
-                                _prefs.saveInvoices(_invoices);
-                                Navigator.of(context).pop();
-                                setState(() {});
-                              });
-                            },
-                          ),
-                        ],
-                      ],
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-      bottomNavigationBar:
+        bottomNavigationBar:
           BottomNavigationBar(items: const <BottomNavigationBarItem>[
         BottomNavigationBarItem(
           icon: Icon(Icons.home, color: Colors.blue),
@@ -427,15 +454,50 @@ class _HomePageState extends State<HomePage> {
             Icons.search,
             color: Colors.blue,
           ),
-          label: 'Tìm kiếm',
+          label: 'Search',
           backgroundColor: Colors.green,
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.bar_chart, color: Colors.blue),
-          label: 'Thống kê',
+          label: 'Chart',
           backgroundColor: Colors.pink,
         ),
       ], currentIndex: _selectedIndex, onTap: _onItemTapped),
-    );
+      );
+    }
   }
-}
+
+  class Invoice {
+    final String customerName;
+    final int quantity;
+    final double price;
+    final double totalAmount;
+    bool isPaid;
+    bool isVip;
+
+    Invoice({
+      required this.customerName,
+      required this.quantity,
+      required this.price,
+      required this.totalAmount,
+      this.isPaid = false,
+      this.isVip = false,
+    });
+
+    String toJson() {
+      return '{"customerName":"$customerName","quantity":$quantity,"price":$price,"totalAmount":$totalAmount,"isPaid":$isPaid,"isVip":$isVip}';
+    }
+
+    factory Invoice.fromJson(String json) {
+      Map<String, dynamic> data = jsonDecode(json);
+      return Invoice(
+        customerName: data['customerName'],
+        quantity: data['quantity'],
+        price: data['price'],
+        totalAmount: data['totalAmount'],
+        isPaid: data['isPaid'],
+        isVip: data['isVip'],
+      );
+    }
+    }
+  
