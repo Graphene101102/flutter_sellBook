@@ -69,10 +69,7 @@ class _SearchPageState extends State<SearchPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-            image: DecorationImage(
-                image: AssetImage("assets/images/images.jpeg"),
-                fit: BoxFit.cover)),
+        
         padding: EdgeInsets.only(top: 16.0),
         child: Column(
           children: [

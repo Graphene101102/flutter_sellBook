@@ -61,41 +61,39 @@ int _selectedIndex = 0;
         .fold(0, (sum, invoice) => sum + invoice.totalAmount);
     return Scaffold(
       
-      body: Container(
-         decoration: const BoxDecoration(
-              image: DecorationImage(
-                  image: AssetImage("assets/images/images.jpeg"),
-                  fit: BoxFit.cover)),
-          height: MediaQuery.of(context).size.height,
-        child: Column(
-          children: [
-               const SizedBox(
-                height: 20,
+      body: Column(
+        children: [
+             SizedBox(
+              height: 20,
+            ),
+            Row(
+                    children: [
+                      SizedBox(width: 10,),
+                      Text('  '),
+                      Spacer(),
+                       Text(
+              'Danh sách hoá đơn',
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                decoration: TextDecoration.underline,
+                fontSize: 31.0,
+                color: Colors.yellow,
               ),
-              Row(
-                      children: [
-                        SizedBox(width: 10,),
-                        Text('  '),
-                        Spacer(),
-                         Text(
-                'Danh sách hoá đơn',
-                style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                  decoration: TextDecoration.underline,
-                  fontSize: 31.0,
-                  color: Colors.yellow,
-                ),
-              ),
-                        Spacer(),
-                        IconButton(onPressed: ()=>{
-                          Navigator.pushAndRemoveUntil(context, 
-                        MaterialPageRoute(builder: (BuildContext context) => const LoginPage()), 
-                        ModalRoute.withName('/')
-                        )}, 
-                        icon: Icon(Icons.logout)),
-                        SizedBox(width: 10,),
-                      ],
-                    ),
+            ),
+                      Spacer(),
+                      IconButton(onPressed: ()=>{
+                        Navigator.pushAndRemoveUntil(context, 
+                      MaterialPageRoute(builder: (BuildContext context) => const LoginPage()), 
+                      ModalRoute.withName('/')
+                      )}, 
+                      icon: Icon(Icons.logout)),
+                      SizedBox(width: 10,),
+                    ],
+                  ),
+          Container(
+            
+            height: MediaQuery.of(context).size.height * 3 / 5,
+            child: 
             ListView.builder(
               itemCount: _invoices.length,
               itemBuilder: (context, index) {
@@ -153,38 +151,40 @@ int _selectedIndex = 0;
                 );
               },
             ),
-            Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Tổng số hoá đơn đã thanh toán: $paidInvoicesCount',
-                          style: TextStyle(
-                            fontSize: 16.0,
-                            fontWeight: FontWeight.bold,
-                          ),
+           
+            
+          ),
+          Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Tổng số hoá đơn đã thanh toán: $paidInvoicesCount',
+                        style: TextStyle(
+                          fontSize: 16.0,
+                          fontWeight: FontWeight.bold,
                         ),
-                        SizedBox(height: 8.0),
-                        Text(
-                          'Tổng doanh thu: $totalRevenue',
-                          style: TextStyle(
-                            fontSize: 22.0,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red,
-                          ),
+                      ),
+                      SizedBox(height: 8.0),
+                      Text(
+                        'Tổng doanh thu: $totalRevenue',
+                        style: TextStyle(
+                          fontSize: 22.0,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-      
-          ],
-        ),
+                ),
+              ],
+            ),
+
+        ],
       ),
       bottomNavigationBar:
           BottomNavigationBar(items: const <BottomNavigationBarItem>[

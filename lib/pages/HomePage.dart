@@ -219,11 +219,7 @@ int _selectedIndex = 0;
   Widget build(BuildContext context) {
       return Scaffold(
         body: Container(
-          decoration: const BoxDecoration(
-              image: DecorationImage(
-                  image: AssetImage("assets/images/images.jpeg"),
-                  fit: BoxFit.cover)),
-          height: MediaQuery.of(context).size.height,
+         
           //padding: EdgeInsets.all(8.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
