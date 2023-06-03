@@ -87,7 +87,7 @@ class _SearchPageState extends State<SearchPage> {
                 fontWeight: FontWeight.w900,
                 decoration: TextDecoration.underline,
                 fontSize: 31.0,
-                color: Colors.yellow,
+                color: Colors.blue,
               ),
             ),
                       Spacer(),

@@ -239,7 +239,7 @@ int _selectedIndex = 0;
                       fontWeight: FontWeight.w900,
                       decoration: TextDecoration.underline,
                       fontSize: 31.0,
-                      color: Colors.yellow,
+                      color: Colors.blue,
                         ),
                       ),
                       Spacer(),
@@ -324,7 +324,7 @@ int _selectedIndex = 0;
                         EdgeInsets.all(8), // Khoảng cách giữa khung và nội dung
                     decoration: BoxDecoration(
                       border: Border.all(
-                        color: Colors.yellow, // Màu viền của khung
+                        color: Colors.blue, // Màu viền của khung
                         width: 1, // Độ dày của viền
                       ),
                       borderRadius: BorderRadius.circular(8), // Bo góc của khung
@@ -379,7 +379,7 @@ int _selectedIndex = 0;
                                 if (invoice.isVip)
                                   TextSpan(
                                       text: '  (VIP) ',
-                                      style: TextStyle(color: Colors.yellowAccent))
+                                      style: TextStyle(color: Colors.blueAccent))
                               ]),
                         ),
                         subtitle: Column(

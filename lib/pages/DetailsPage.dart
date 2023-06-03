@@ -77,7 +77,7 @@ int _selectedIndex = 0;
                 fontWeight: FontWeight.w900,
                 decoration: TextDecoration.underline,
                 fontSize: 31.0,
-                color: Colors.yellow,
+                color: Colors.blue,
               ),
             ),
                       Spacer(),
