@@ -189,14 +189,6 @@ int _selectedIndex = 0;
     );
   }
 
-  void _markAsUnpaid(int index) {
-    _Dialog('Trạng thái hoá đơn', 'Hoá đơn chưa thanh toán!', () {
-      setState(() {
-        _invoices[index].isPaid = false;
-        _saveInvoices();
-      });
-    });
-  }
 
   void _markAsPaid(int index) {
     _showConfirmationDialog('Xác nhận', 'Đánh dấu hoá đơn đã thanh toán?', () {
